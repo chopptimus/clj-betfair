@@ -1,0 +1,8 @@
+{:paths ["src"]
+ :deps {aleph {:mvn/version "0.4.6"}
+        gloss {:mvn/version "0.2.6"}
+        cheshire {:mvn/version "5.9.0"}
+        org.clojure/clojure {:mvn/version "1.10.1"}}
+ :aliases
+ {:dev {:extra-paths ["examples"]
+        :extra-deps {cider/cider-nrepl {:mvn/version "0.24.0"}}}}}
