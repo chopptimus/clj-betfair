@@ -1,7 +1,7 @@
-(ns clj-betfair.accounts
+(ns clj-betfair.account
   (:require [clj-betfair.rpc :refer [def-rpc-endpoint-methods]]))
 
-(def endpoint "https://api.betfair.com/exchange/accounts/json-rpc/v1")
+(def endpoint "https://api.betfair.com/exchange/account/json-rpc/v1")
 (def prefix "AccountAPING/v1.0/")
 
 (def-rpc-endpoint-methods endpoint prefix
