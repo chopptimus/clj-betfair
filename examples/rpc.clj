@@ -1,12 +1,10 @@
-(ns rpc
-  (:require [cheshire.core :as c]
-            [clj-betfair.betting :as betting]
-            [clj-betfair.scores :as scores]
-            [manifold.deferred :as d]))
+(require '[cheshire.core :as c]
+         '[clj-betfair.rpc :refer [unwrap]]
+         '[clj-betfair.betting :as betting])
 
-(def session-token "redacted")
-(def app-key "redacted")
-
-@(d/chain
-  (scores/list-available-events app-key session-token {})
-  (fn [resp] (-> resp :body slurp c/parse-string (get "result"))))
+(let [app-key "app-key-here"
+      session-token "session-token-here"]
+  @(unwrap (betting/list-events
+            app-key
+            session-token
+            {:filter {:eventTypeIds [1]}})))

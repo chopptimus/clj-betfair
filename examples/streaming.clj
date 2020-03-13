@@ -1,11 +1,10 @@
-(ns streaming
-  (:gen-class)
-  (:require [cheshire.core :refer [parse-string]]
-            [clojure.edn :as edn]
-            [clojure.stacktrace :refer [print-stack-trace]]
-            [clj-betfair.auth :as auth]
-            [clj-betfair.stream :as bfs]
-            [manifold.stream :as s]))
+(require '[cheshire.core :refer [parse-string]]
+         '[clojure.edn :as edn]
+         '[clojure.stacktrace :refer [print-stack-trace]]
+         '[clj-betfair.auth :as auth]
+         '[clj-betfair.stream :as bfs]
+         '[manifold.deferred :as d]
+         '[manifold.stream :as s])
 
 (defn keepalive-loop!
   [app-key session-token]
@@ -21,18 +20,22 @@
       (when-not (instance? InterruptedException e)
         (throw e)))))
 
-(defn -main
-  [config]
-  (let [{:keys [betfair-creds]} (edn/read-string (slurp config))
-        {:keys [username password app-key p12-path p12-password]} betfair-creds
-        resp @(auth/login! username password app-key p12-path p12-password)
-        body (slurp (:body resp))
-        session-token (get (parse-string body) "sessionToken")
-        stream (bfs/betfair-stream app-key session-token {:decode-json false})]
-    (s/put!
-     stream
-     (bfs/market-subscription
-      {"marketFilter" {"eventIds" [2]
-                       "marketTypes" ["MATCH_ODDS"]}}
-      {"marketDataFilter" {"fields" ["MARKET_DEF" "EX_ALL_OFFERS"]}}))
-    (s/consume #(println %) stream)))
+(let [config (first *command-line-args*)
+      {:keys [betfair-creds]} (edn/read-string (slurp config))
+      {:keys [username password app-key p12-path p12-password]} betfair-creds
+
+      session-token
+      @(d/chain
+        (auth/login! username password app-key p12-path p12-password)
+        (fn [resp]
+          (-> resp :body slurp parse-string (get "sessionToken"))))
+
+      stream (bfs/betfair-stream app-key session-token {:decode-json false})]
+  (println session-token)
+  (s/put!
+   stream
+   (bfs/market-subscription
+    {"marketFilter" {"eventIds" [2]
+                     "marketTypes" ["MATCH_ODDS"]}}
+    {"marketDataFilter" {"fields" ["MARKET_DEF" "EX_ALL_OFFERS"]}}))
+  @(s/consume #(println %) stream))
