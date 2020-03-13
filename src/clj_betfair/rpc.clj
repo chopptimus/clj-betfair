@@ -22,9 +22,12 @@
 (defn make-rpc-request-fn
   [endpoint prefix sym]
   (let [method (str prefix (camel-casify (str sym)))]
-    (fn [app-key session-token params]
-      (let [req-map (rpc-request-map app-key session-token method params)]
-        (aleph.http/post endpoint req-map)))))
+    (fn rpc-request
+      ([app-key session-token]
+       (rpc-request app-key session-token {}))
+      ([app-key session-token params]
+       (let [req-map (rpc-request-map app-key session-token method params)]
+         (aleph.http/post endpoint req-map))))))
 
 (defmacro def-rpc-endpoint-methods
   [endpoint prefix & rpc-methods]
