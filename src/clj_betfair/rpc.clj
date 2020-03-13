@@ -1,7 +1,8 @@
 (ns clj-betfair.rpc
   (:require [aleph.http]
             [cheshire.core :as c]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [manifold.deferred :as d]))
 
 (defn camel-casify
   [s]
@@ -35,3 +36,13 @@
      ~@(map (fn [sym]
               `(def ~sym (make-rpc-request-fn ~endpoint ~prefix (quote ~sym))))
             rpc-methods)))
+
+(defn unwrap
+  [deferred]
+  (d/chain
+   deferred
+   (fn [resp]
+     (let [data (-> resp :body slurp c/parse-string)]
+       (if (contains? data "error")
+         (get data "error")
+         (get data "result"))))))
